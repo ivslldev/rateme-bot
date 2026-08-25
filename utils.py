@@ -52,11 +52,11 @@ def avg_text(telegram_id: int) -> str:
 async def send_scale_images(bot: Bot, chat_id: int) -> None:
     """Send the two reference scale images as one media group (local files)."""
     media = []
-    for path in (config.SCALE_MALE_IMG, config.SCALE_FEMALE_IMG):
+    for i, path in enumerate((config.SCALE_MALE_IMG, config.SCALE_FEMALE_IMG)):
         if os.path.exists(path):
-            media.append(InputMediaPhoto(media=FSInputFile(path)))
+            caption = "📊 Шкалы оценок: True Adam (мужская) и True Eve (женская)" if i == 0 else None
+            media.append(InputMediaPhoto(media=FSInputFile(path), caption=caption))
     if media:
-        media[0].caption = "📊 Шкалы оценок: True Adam (мужская) и True Eve (женская)"
         await bot.send_media_group(chat_id=chat_id, media=media)
     else:
         await bot.send_message(chat_id, "(Файлы шкал не найдены в assets/ — см. текстовые шкалы ниже)")
@@ -72,12 +72,14 @@ async def send_profile(bot: Bot, chat_id: int, row, caption: str, reply_markup=N
     """Send a profile as a media group (1-3 photos) with caption; text fallback."""
     photos = db.get_photos(row["telegram_id"])
     if photos:
-        media = [InputMediaPhoto(media=fid) for fid in photos[:3]]
-        media[0].caption = caption
+        media = []
+        for i, fid in enumerate(photos[:3]):
+            img_caption = caption if i == 0 else None
+            media.append(InputMediaPhoto(media=fid, caption=img_caption))
         await bot.send_media_group(chat_id=chat_id, media=media, reply_markup=reply_markup)
     else:
         await bot.send_message(chat_id, caption, reply_markup=reply_markup)
-
+        
 
 async def show_main_menu(bot: Bot, chat_id: int, telegram_id: int) -> None:
     row = db.get_user(telegram_id)
